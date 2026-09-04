@@ -1,16 +1,20 @@
 import Link from "next/link";
+import LogoutButton from "@/components/auth/LogoutButton";
+import { getCurrentUser } from "@/lib/auth/session";
 
 /**
  * 내 활동입니다. 원본 시안의 `v-my` 뷰에 해당합니다.
  *
- * 로그인한 사람의 글·댓글·투표 기록을 보여주는 화면이라 인증이 붙어야 의미가 생깁니다.
- * 지금은 로그인이 없으므로 로그인을 안내하는 상태만 보여줍니다.
+ * 글·댓글·투표 기록은 게시판 단계에서 채웁니다.
+ * 지금은 로그인 여부에 따라 계정 정보와 로그아웃만 보여줍니다.
  */
 export const metadata = {
   title: "내 활동 — 고다지 커뮤니티",
 };
 
-export default function MyPage() {
+export default async function MyPage() {
+  const user = await getCurrentUser();
+
   return (
     <section className="view on">
       <div className="cols">
@@ -21,13 +25,31 @@ export default function MyPage() {
             <p>내가 쓴 글과 댓글, 투표한 안건을 모아서 봅니다.</p>
           </div>
           <div className="card">
-            <div className="empty">
-              <strong>로그인이 필요합니다</strong>
-              <p>익명으로 쓴 글도 여기에서는 내 기록으로 보입니다.</p>
-              <Link className="btn pri" href="/login">
-                로그인
-              </Link>
-            </div>
+            {user ? (
+              <div className="card-bd pad">
+                <div className="dr-me" style={{ marginBottom: 16 }}>
+                  <span className="av">{user.displayName.slice(0, 1)}</span>
+                  <span className="t">
+                    <strong style={{ color: "var(--ink)" }}>{user.displayName}</strong>
+                    <span style={{ color: "var(--dim)" }}>
+                      {user.isAdmin ? "사무국 계정" : "일반 회원"}
+                    </span>
+                  </span>
+                </div>
+                <div className="notice-box" style={{ marginBottom: 16 }}>
+                  글·댓글·투표 기록은 게시판을 만들면서 채웁니다.
+                </div>
+                <LogoutButton />
+              </div>
+            ) : (
+              <div className="empty">
+                <strong>로그인이 필요합니다</strong>
+                <p>익명으로 쓴 글도 여기에서는 내 기록으로 보입니다.</p>
+                <Link className="btn pri" href="/login">
+                  로그인
+                </Link>
+              </div>
+            )}
           </div>
         </div>
 

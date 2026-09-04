@@ -4,8 +4,10 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import BrandCrest from "./BrandCrest";
+import LogoutButton from "./auth/LogoutButton";
 import { BOARDS } from "@/lib/boards";
 import { SITE_PAGES } from "@/lib/site-pages";
+import type { CurrentUser } from "@/lib/auth/session";
 
 /**
  * 상단 헤더와 왼쪽 드로어입니다.
@@ -15,8 +17,11 @@ import { SITE_PAGES } from "@/lib/site-pages";
  * Flutter로 치면 화면 상태를 변수로 들고 있다가 라우터에게 넘긴 셈입니다.
  *
  * 드로어 열림 여부와 모바일 검색창 토글 때문에 브라우저에서 동작해야 해서 클라이언트 컴포넌트입니다.
+ *
+ * 로그인한 사람은 스스로 알아내지 않고 `layout.tsx`(서버 컴포넌트)에게서 받습니다.
+ * 여기서 직접 물어보면 답이 오는 동안 '로그인' 버튼이 잠깐 보였다가 닉네임으로 바뀝니다.
  */
-export default function SiteHeader() {
+export default function SiteHeader({ user }: { user: CurrentUser | null }) {
   const pathname = usePathname();
   const router = useRouter();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -72,9 +77,19 @@ export default function SiteHeader() {
               ))}
             </div>
             <div>
-              <Link href="/login">로그인</Link>
-              <span className="sep">|</span>
-              <Link href="/signup">회원가입</Link>
+              {user ? (
+                <>
+                  <Link href="/my">{user.displayName}</Link>
+                  <span className="sep">|</span>
+                  <LogoutButton className="" />
+                </>
+              ) : (
+                <>
+                  <Link href="/login">로그인</Link>
+                  <span className="sep">|</span>
+                  <Link href="/signup">회원가입</Link>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -128,7 +143,11 @@ export default function SiteHeader() {
                   <path d="m20 20-3.5-3.5" />
                 </svg>
               </button>
-              <Link href="/login" className="icon-btn" aria-label="로그인">
+              <Link
+                href={user ? "/my" : "/login"}
+                className="icon-btn"
+                aria-label={user ? "내 활동" : "로그인"}
+              >
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                   <circle cx="12" cy="8" r="3.6" />
                   <path d="M4.5 20a7.5 7.5 0 0 1 15 0" />
@@ -177,11 +196,11 @@ export default function SiteHeader() {
           </div>
           <div className="dr-me">
             <span className="av" style={{ background: "rgba(255,255,255,.15)", color: "#fff" }}>
-              ?
+              {user ? user.displayName.slice(0, 1) : "?"}
             </span>
             <span className="t">
-              <strong>로그인이 필요합니다</strong>
-              <span>닉네임·익명 모두 활동 가능</span>
+              <strong>{user ? user.displayName : "로그인이 필요합니다"}</strong>
+              <span>{user?.isAdmin ? "사무국 계정" : "닉네임·익명 모두 활동 가능"}</span>
             </span>
           </div>
         </div>
@@ -222,12 +241,23 @@ export default function SiteHeader() {
         </div>
 
         <div className="dr-ft">
-          <Link href="/signup" className="btn ghost" onClick={closeDrawer}>
-            회원가입
-          </Link>
-          <Link href="/login" className="btn pri" onClick={closeDrawer}>
-            로그인
-          </Link>
+          {user ? (
+            <>
+              <Link href="/my" className="btn ghost" onClick={closeDrawer}>
+                내 활동
+              </Link>
+              <LogoutButton className="btn pri" />
+            </>
+          ) : (
+            <>
+              <Link href="/signup" className="btn ghost" onClick={closeDrawer}>
+                회원가입
+              </Link>
+              <Link href="/login" className="btn pri" onClick={closeDrawer}>
+                로그인
+              </Link>
+            </>
+          )}
         </div>
       </aside>
     </>

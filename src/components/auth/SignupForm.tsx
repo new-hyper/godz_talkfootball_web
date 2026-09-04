@@ -2,13 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import OtpStep from "./OtpStep";
 import { translateAuthError } from "@/lib/auth/errors";
 import {
-  RESEND_COOLDOWN_SECONDS,
   validateEmail,
   validateNickname,
-  validateOtp,
   validatePassword,
   validatePasswordConfirm,
 } from "@/lib/auth/rules";
@@ -16,9 +15,6 @@ import { createClient } from "@/lib/supabase/client";
 
 /** 동의받은 약관의 판. 약관을 고치면 이 값을 올리고 재동의를 받는다. */
 const TERMS_VERSION = "v1";
-
-/** 인증번호를 이만큼 틀리면 무효로 하고 새로 보낸다. */
-const MAX_OTP_ATTEMPTS = 5;
 
 type NicknameCheck = "idle" | "checking" | "ok" | "taken";
 
@@ -69,18 +65,6 @@ export default function SignupForm() {
   const [errors, setErrors] = useState<Record<string, string | null>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-
-  const [otp, setOtp] = useState("");
-  const [otpAttempts, setOtpAttempts] = useState(0);
-  const [cooldown, setCooldown] = useState(0);
-  const [notice, setNotice] = useState<string | null>(null);
-
-  // 재발송 쿨다운을 1초씩 깎는다.
-  useEffect(() => {
-    if (cooldown <= 0) return;
-    const timer = setInterval(() => setCooldown((left) => left - 1), 1000);
-    return () => clearInterval(timer);
-  }, [cooldown]);
 
   function setError(field: string, message: string | null) {
     setErrors((prev) => ({ ...prev, [field]: message }));
@@ -169,114 +153,19 @@ export default function SignupForm() {
     }
 
     setStep(2);
-    setCooldown(RESEND_COOLDOWN_SECONDS);
-    setNotice(`${email} 으로 인증번호를 보냈습니다.`);
-  }
-
-  async function submitStep2(event: React.FormEvent) {
-    event.preventDefault();
-    setFormError(null);
-
-    const invalid = validateOtp(otp);
-    setError("otp", invalid);
-    if (invalid) return;
-
-    setBusy(true);
-    const supabase = createClient();
-    const { error } = await supabase.auth.verifyOtp({
-      email,
-      token: otp,
-      type: "signup",
-    });
-    setBusy(false);
-
-    if (!error) {
-      // 인증에 성공하면 그 자리에서 세션까지 발급된다. 따로 로그인시킬 필요가 없다.
-      // refresh 를 불러야 서버 컴포넌트가 새 세션으로 다시 그려진다.
-      router.replace("/");
-      router.refresh();
-      return;
-    }
-
-    const attempts = otpAttempts + 1;
-    setOtpAttempts(attempts);
-    setOtp("");
-
-    if (attempts >= MAX_OTP_ATTEMPTS) {
-      setOtpAttempts(0);
-      setFormError("인증번호를 5회 틀렸습니다. 새 번호를 보냈습니다.");
-      await resend({ silent: true });
-      return;
-    }
-    setFormError(
-      `${translateAuthError(error)} (${attempts}/${MAX_OTP_ATTEMPTS}회 틀림)`,
-    );
-  }
-
-  async function resend({ silent = false } = {}) {
-    if (cooldown > 0 || busy) return;
-
-    setBusy(true);
-    const supabase = createClient();
-    const { error } = await supabase.auth.resend({ type: "signup", email });
-    setBusy(false);
-
-    if (error) {
-      setFormError(translateAuthError(error));
-      return;
-    }
-    setCooldown(RESEND_COOLDOWN_SECONDS);
-    if (!silent) {
-      setNotice("인증번호를 다시 보냈습니다.");
-      setFormError(null);
-    }
   }
 
   if (step === 2) {
     return (
-      <form onSubmit={submitStep2} noValidate>
-        {notice && (
-          <p style={{ fontSize: 13.5, color: "var(--dim)", marginBottom: 14, lineHeight: 1.7 }}>
-            {notice} 10분 안에 입력해 주세요.
-          </p>
-        )}
-        {formError && <p className="form-err">{formError}</p>}
-
-        <div className="field">
-          <label htmlFor="otp">인증번호 6자리</label>
-          <input
-            id="otp"
-            className={`otp${errors.otp ? " bad" : ""}`}
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            maxLength={6}
-            value={otp}
-            onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-            autoFocus
-          />
-          {errors.otp && <span className="msg bad">{errors.otp}</span>}
-        </div>
-
-        <button
-          type="submit"
-          className="btn pri"
-          style={{ width: "100%" }}
-          disabled={busy || otp.length !== 6}
-        >
-          {busy ? "확인하는 중…" : "가입 완료"}
-        </button>
-
-        <div style={{ marginTop: 12, textAlign: "center" }}>
-          <button
-            type="button"
-            className="btn ghost"
-            onClick={() => resend()}
-            disabled={cooldown > 0 || busy}
-          >
-            {cooldown > 0 ? `재발송 ${cooldown}초 후` : "인증번호 다시 받기"}
-          </button>
-        </div>
-      </form>
+      <OtpStep
+        email={email}
+        onVerified={() => {
+          // 인증과 동시에 세션이 나오므로 곧바로 홈으로 보낸다.
+          // refresh 를 불러야 서버 컴포넌트가 새 세션으로 다시 그려진다.
+          router.replace("/");
+          router.refresh();
+        }}
+      />
     );
   }
 
