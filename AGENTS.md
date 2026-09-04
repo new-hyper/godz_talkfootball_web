@@ -92,7 +92,8 @@ CSS도 `.gnb button` 처럼 **태그 선택자**로 잡혀 있었습니다.
 | `/login` `/signup` | 로그인·회원가입 | 뼈대만 |
 | `/admin` | 사무국 전용 (투표 개설, 신고 처리) | 없음 |
 
-게시판 10개: `notice` `vote` `topic` `free` `coach` `parent` `player` `event` `qna` `file`
+게시판 8개: `notice` `vote` `topic` `free` `parent` `player` `event` `qna`
+원본 시안에 있던 `coach`(지도자 라운지)와 `file`(자료실)은 뺐습니다.
 정적 페이지 8개: `about` `org` `biz` `rules` `terms` `privacy` `ads` `contact`
 
 ## 역할과 익명 정책

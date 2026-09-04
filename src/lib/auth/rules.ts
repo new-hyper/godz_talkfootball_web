@@ -19,6 +19,9 @@ export const PASSWORD_MIN_LENGTH = 8;
 /** 인증번호 재발송 쿨다운(초). Supabase 기본값과 맞춰 둔다. */
 export const RESEND_COOLDOWN_SECONDS = 60;
 
+/** 인증번호를 이만큼 틀리면 그 번호를 버리고 새로 보낸다. */
+export const MAX_OTP_ATTEMPTS = 5;
+
 /** 문제가 없으면 null, 있으면 화면에 그대로 띄울 문장을 준다. */
 export type Invalid = string | null;
 

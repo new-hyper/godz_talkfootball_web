@@ -1,10 +1,14 @@
+import { redirect } from "next/navigation";
 import SignupForm from "@/components/auth/SignupForm";
+import { getCurrentUser } from "@/lib/auth/session";
 
 export const metadata = {
   title: "회원가입 — 고다지 커뮤니티",
 };
 
-export default function SignupPage() {
+export default async function SignupPage() {
+  if (await getCurrentUser()) redirect("/");
+
   return (
     <section className="view on">
       <div className="card" style={{ maxWidth: 460, margin: "0 auto" }}>
