@@ -5,6 +5,8 @@ import { LikeButton, UpDownBox } from "@/components/board/PostReactions";
 import { getCurrentUser } from "@/lib/auth/session";
 import { boardOf } from "@/lib/boards";
 import { ago } from "@/lib/format";
+import CommentThread from "@/components/board/CommentThread";
+import { listComments } from "@/lib/comments";
 import { authorLabel, getMyReaction, getPost } from "@/lib/posts";
 
 /**
@@ -13,8 +15,6 @@ import { authorLabel, getMyReaction, getPost } from "@/lib/posts";
  * 원본은 목록에서 `openPost(3)` 을 불러 같은 화면을 갈아 끼웠습니다.
  * 여기서는 글마다 `/post/3` 이라는 주소를 갖습니다. 링크를 건네면 그 글이 열리고,
  * 검색엔진도 글 하나하나를 따로 수집합니다. 이 프로젝트에서 원본의 `go()` 를 버린 이유입니다.
- *
- * 댓글과 추천 버튼, 신고는 아직 없습니다. 댓글 표를 만들면서 함께 붙입니다.
  */
 
 const chipClass = (boardId: string) =>
@@ -48,7 +48,11 @@ export default async function PostPage(props: PageProps<"/post/[postId]">) {
   const board = boardOf(post.board_id);
   const author = authorLabel(post);
 
-  const [user, myReaction] = await Promise.all([getCurrentUser(), getMyReaction(post.id)]);
+  const [user, myReaction, comments] = await Promise.all([
+    getCurrentUser(),
+    getMyReaction(post.id),
+    listComments(post.id),
+  ]);
 
   const reactionProps = {
     postId: post.id,
@@ -124,6 +128,13 @@ export default async function PostPage(props: PageProps<"/post/[postId]">) {
                 {canDelete && <DeletePostButton postId={post.id} boardId={post.board_id} />}
               </div>
             )}
+
+            <CommentThread
+              postId={post.id}
+              comments={comments}
+              userUid={user?.uid ?? null}
+              nickname={user?.nickname ?? null}
+            />
           </article>
         </div>
 

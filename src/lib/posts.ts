@@ -31,10 +31,13 @@ export type PostRow = {
   author_nickname: string | null;
   /** 내가 쓴 글인지. 로그인하지 않았으면 null 입니다. */
   is_mine: boolean | null;
+  comment_count: number;
+  /** 추천에서 비추천을 뺀 값. 토론주제 인기순에 씁니다. */
+  net_count: number;
 };
 
 const ROW_COLUMNS =
-  "id, board_id, title, is_anonymous, like_count, up_count, down_count, created_at, author_nickname, is_mine";
+  "id, board_id, title, is_anonymous, like_count, up_count, down_count, created_at, author_nickname, is_mine, comment_count, net_count";
 
 export type Sort = "new" | "hot";
 
@@ -82,14 +85,9 @@ export async function listPosts(options: {
       .eq("board_id", boardId);
 
     // 인기순의 뜻이 게시판마다 다릅니다.
-    // 토론주제는 추천·비추천을 받으므로 추천이 많은 순,
-    // 나머지는 좋아요가 많은 순입니다.
-    //
-    // 토론주제의 진짜 기준은 추천에서 비추천을 뺀 순공감인데,
-    // 뺄셈한 값으로 정렬하려면 그 값이 칸으로 있어야 합니다.
-    // 댓글 표를 만들 때 뷰에 함께 넣고 여기도 고칩니다.
+    // 토론주제는 순공감(추천 − 비추천), 나머지는 좋아요입니다.
     if (sort === "hot") {
-      const column = boardOf(boardId)?.reaction === "updown" ? "up_count" : "like_count";
+      const column = boardOf(boardId)?.reaction === "updown" ? "net_count" : "like_count";
       query = query.order(column, { ascending: false });
     }
 
