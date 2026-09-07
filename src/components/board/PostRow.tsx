@@ -32,7 +32,7 @@ export default function PostRow({ post }: { post: Post }) {
   // 토론주제는 추천에서 비추천을 뺀 값이 곧 그 주제가 받은 지지입니다.
   const score =
     board?.reaction === "updown"
-      ? `순공감 ${fmt(post.up_count - post.down_count)}`
+      ? `순공감 ${fmt(post.net_count)}`
       : board?.reaction === "like"
         ? `추천 ${fmt(post.like_count)}`
         : null;
@@ -45,7 +45,10 @@ export default function PostRow({ post }: { post: Post }) {
           {isNew(post.created_at) && <span className="badge-new">N</span>}
         </div>
 
-        <div className="row-ttl">{post.title}</div>
+        <div className="row-ttl">
+          {post.title}
+          {post.comment_count > 0 && <span className="cmt">[{post.comment_count}]</span>}
+        </div>
 
         <div className="row-meta">
           <span className="who">{authorLabel(post)}</span>
