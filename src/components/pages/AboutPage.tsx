@@ -96,7 +96,7 @@ export default function AboutPage() {
       </p>
 
       <div className="callout">
-        현장 의견이 규정으로 이어지는 경로를 열어 두었습니다. <Link href="/board/topic">토론주제 게시판 가기</Link>
+        현장 의견이 규정으로 이어지는 경로를 열어 두었습니다. <Link href="/board/discussion">토론주제 게시판 가기</Link>
       </div>
     </div>
   );

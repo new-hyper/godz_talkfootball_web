@@ -129,7 +129,8 @@ export default function SiteHeader({ user }: { user: CurrentUser | null }) {
             </form>
 
             <div className="hd-act">
-              <Link href="/login" className="btn-write">
+              {/* 로그인하지 않았으면 /write 가 스스로 로그인 화면으로 보냅니다. */}
+              <Link href="/write" className="btn-write">
                 글쓰기
               </Link>
               <button
@@ -172,7 +173,13 @@ export default function SiteHeader({ user }: { user: CurrentUser | null }) {
             {BOARDS.map((b) => (
               <Link key={b.id} href={`/board/${b.id}`} aria-current={activeBoard === b.id}>
                 {b.name}
-                {b.id === "vote" && <span className="hot" />}
+                {/*
+                  원본 시안에서 이 초록 점(.hot)은 투표 게시판에 고정으로 붙어 있었습니다.
+                  '지금 활발한 곳'을 가리키는 장식이었는데, 실제로 활발한지와 무관하게
+                  늘 켜져 있어서 알려주는 것이 없었습니다.
+                  지금 보고 있는 게시판을 가리키는 데로 돌려 씁니다.
+                */}
+                {activeBoard === b.id && <span className="hot" />}
               </Link>
             ))}
           </div>

@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+import { signingKeys } from "./lib/auth/jwks";
 import { supabaseConfig } from "./lib/supabase/config";
 
 /**
@@ -43,9 +44,15 @@ export async function proxy(request: NextRequest) {
   });
 
   // 이 호출이 토큰 갱신을 일으킵니다. 결과를 쓰지 않아도 반드시 불러야 합니다.
-  // getSession() 이 아니라 getUser() 를 쓰는 이유는, getUser() 가 서버에 물어봐
-  // 토큰이 진짜인지 확인하기 때문입니다. getSession() 은 쿠키를 그대로 믿습니다.
-  await supabase.auth.getUser();
+  //
+  // 전에는 getUser() 였습니다. 토큰이 진짜인지 인증 서버에 물어보는 함수인데,
+  // 그 확인이 요청마다 175ms 씩 들었습니다. 여기가 하려는 일은 확인이 아니라
+  // '수명이 다 된 토큰을 새것으로 바꿔 쿠키에 다시 심는 것' 하나뿐입니다.
+  //
+  // getClaims() 는 안에서 세션을 꺼내면서 수명이 지났으면 갱신까지 합니다.
+  // 그러면서 확인은 공개키로 직접 하므로, 아직 살아 있는 토큰이면 왕복이 없습니다.
+  // 갱신이 필요한 순간에만 인증 서버에 다녀옵니다.
+  await supabase.auth.getClaims(undefined, { keys: await signingKeys() });
 
   return response;
 }

@@ -8,7 +8,7 @@ import { translateAuthError } from "@/lib/auth/errors";
 import { validateEmail } from "@/lib/auth/rules";
 import { createClient } from "@/lib/supabase/client";
 
-export default function LoginForm() {
+export default function LoginForm({ next = "/" }: { next?: string }) {
   const router = useRouter();
 
   const [email, setEmail] = useState("");
@@ -22,7 +22,9 @@ export default function LoginForm() {
   const [needsVerify, setNeedsVerify] = useState(false);
 
   function done() {
-    router.replace("/");
+    // 글을 쓰려다 막혀서 온 사람은 홈이 아니라 글쓰기로 돌려보냅니다.
+    // 어디로 보낼지는 서버가 안전한 값만 걸러 넘겨 줍니다.
+    router.replace(next);
     router.refresh();
   }
 

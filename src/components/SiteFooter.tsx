@@ -24,10 +24,10 @@ export default function SiteFooter() {
             <Link href="/page/biz">사업 안내</Link>
           </nav>
           <p className="ft-info">
-            고다지 커뮤니티 &nbsp;|&nbsp; 대표 <b>홍길동</b> &nbsp;|&nbsp; 고유번호 000-00-00000
+            고다지 커뮤니티 &nbsp;|&nbsp; 대표 <b>이윤재</b>
             <br />
-            서울특별시 송파구 올림픽로 000, 0층 &nbsp;|&nbsp; 대표전화 <b>02-000-0000</b> &nbsp;|&nbsp;
-            godz@example.kr
+            서울특별시 강남구 삼성로 112길 7, 5층 &nbsp;|&nbsp;
+            godztalkfootball@gmail.com
             <br />
             게시물의 책임은 작성자에게 있으며, 협회의 공식 입장과 다를 수 있습니다.
           </p>

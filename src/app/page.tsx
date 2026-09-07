@@ -30,7 +30,7 @@ export default function HomePage() {
             <div className="card-hd">
               <span className="spine" style={{ background: "var(--amber)" }} />
               <h3>토론주제</h3>
-              <Link className="more" href="/board/topic">
+              <Link className="more" href="/board/discussion">
                 전체보기
               </Link>
             </div>

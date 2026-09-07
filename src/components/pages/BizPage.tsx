@@ -237,7 +237,7 @@ export default function BizPage() {
       <div className="callout">
         <b>사업에 대한 의견도 커뮤니티에서 받습니다.</b> 바꿨으면 하는 규정이나 새로 필요한 사업이 있다면 토론주제로
         올려 주세요. 추천이 쌓이면 사무국이 투표 안건으로 올립니다.{" "}
-        <Link href="/board/topic">토론주제 올리기</Link>
+        <Link href="/board/discussion">토론주제 올리기</Link>
       </div>
     </div>
   );
