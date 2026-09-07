@@ -54,7 +54,18 @@ CSS도 `.gnb button` 처럼 **태그 선택자**로 잡혀 있었습니다.
 고친 선택자는 이게 전부입니다: `.hd-util` `.gnb` `.dr-bd` `.tabbar` `.ft-nav` `.rank` `.tags` `.pager`.
 `<a>` 는 기본이 `display:inline` 이라 `height` 가 안 먹는 곳에는 `inline-flex` 만 덧붙였습니다.
 
-`.sorts` `.bchips` `.seg` 는 정렬·필터 토글이라 **진짜 버튼이 맞으므로 그대로 둡니다.**
+`.seg` 는 필터 토글이라 **진짜 버튼이 맞으므로 그대로 둡니다.**
+
+### 나중에 두 군데를 더 고쳤습니다
+
+게시판을 만들면서 `.bchips` 와 `.sorts` 도 `:is(button,a)` 로 넓혔습니다.
+처음에는 둘 다 버튼으로 두려 했는데, 게시판 칩은 **다른 게시판으로 가는 이동**이고
+정렬은 주소에 `?sort=hot` 을 담기로 해서 결국 둘 다 진짜 링크가 맞았습니다.
+그래야 "인기순으로 본 자유게시판"을 그대로 공유할 수 있고 뒤로 가기도 제자리로 돌아옵니다.
+
+토론주제 게시판의 식별자를 `topic` 에서 `discussion` 으로 바꾸면서
+**클래스 이름도 함께 바꿨습니다.** 이름만 바뀌었고 값은 그대로입니다.
+`.chip.topic` `.topic` `.topic-m` `.topic-t` `.topic-w` 다섯 개입니다.
 
 맨 위 `@import` 두 줄도 추가했습니다. 원본이 `<head>`의 `<link>` 로 불러오던 웹폰트이고,
 `playerlab_web` 과 같은 방식입니다.
@@ -92,8 +103,9 @@ CSS도 `.gnb button` 처럼 **태그 선택자**로 잡혀 있었습니다.
 | `/login` `/signup` | 로그인·회원가입 | 뼈대만 |
 | `/admin` | 사무국 전용 (투표 개설, 신고 처리) | 없음 |
 
-게시판 8개: `notice` `vote` `topic` `free` `parent` `player` `event` `qna`
+게시판 8개: `notice` `vote` `discussion` `free` `parent` `player` `event` `qna`
 원본 시안에 있던 `coach`(지도자 라운지)와 `file`(자료실)은 뺐습니다.
+원본의 `topic`(토론주제)은 식별자만 `discussion` 으로 바꿨습니다. 화면 이름은 그대로 `토론주제` 입니다.
 정적 페이지 8개: `about` `org` `biz` `rules` `terms` `privacy` `ads` `contact`
 
 ## 역할과 익명 정책
