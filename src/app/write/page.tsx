@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import WriteForm from "@/components/board/WriteForm";
-import { BOARDS, boardOf } from "@/lib/boards";
+import { BOARDS } from "@/lib/boards";
 import { getCurrentUser } from "@/lib/auth/session";
 
 /**
@@ -37,19 +37,10 @@ export default async function WritePage(props: PageProps<"/write">) {
   const initial =
     asked && writable.includes(asked) ? asked : (writable[0] ?? "free");
 
-  const board = boardOf(initial);
-
   return (
     <section className="view on">
       <div className="card" style={{ maxWidth: 720, margin: "0 auto" }}>
-        <div className="board-hd">
-          <div className="eyebrow">WRITE</div>
-          <h2>{initial === "discussion" ? "토론주제 올리기" : "새 글 쓰기"}</h2>
-          <p>{board?.desc}</p>
-        </div>
-        <div style={{ padding: "18px 16px 8px" }}>
-          <WriteForm boards={writable} initialBoardId={initial} />
-        </div>
+        <WriteForm boards={writable} initialBoardId={initial} />
       </div>
     </section>
   );

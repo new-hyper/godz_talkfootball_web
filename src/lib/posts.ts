@@ -166,6 +166,75 @@ export async function getMyReaction(postId: number): Promise<ReactionKind | null
 }
 
 /**
+ * 여러 글에 내가 누른 것을 한 번에 읽습니다. 홈처럼 카드가 몇 장일 때
+ * 글마다 물어보면 그 횟수만큼 느려집니다.
+ */
+export async function getMyReactions(
+  postIds: number[],
+): Promise<Record<number, ReactionKind>> {
+  if (postIds.length === 0) return {};
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("post_reactions")
+    .select("post_id, kind")
+    .in("post_id", postIds);
+
+  if (error) throw error;
+
+  const mine: Record<number, ReactionKind> = {};
+  for (const row of data ?? []) {
+    mine[row.post_id] = row.kind as ReactionKind;
+  }
+  return mine;
+}
+
+/** 홈 토론주제 카드. 본문 앞부분이 미리보기에 필요합니다. */
+export type TopicPreview = PostRow & { excerpt: string };
+
+/** 원본이 body 첫 문단을 카드에 넣던 것과 같습니다. */
+export function firstParagraph(body: string): string {
+  const found = body.split(/\n\s*\n/).map((chunk) => chunk.trim()).find(Boolean);
+  return found ?? "";
+}
+
+/**
+ * 홈 LIVE FEED. 원본은 방금 올라온 글 5개입니다.
+ */
+export async function listRecentPosts(limit = 5): Promise<PostRow[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("posts_view")
+    .select(ROW_COLUMNS)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+  return (data ?? []) as PostRow[];
+}
+
+/**
+ * 홈에 올릴 토론주제입니다. 순공감이 높은 것 최대 3개. 원본 `paintHomeTopics` 와 같습니다.
+ */
+export async function listHomeTopics(limit = 3): Promise<TopicPreview[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("posts_view")
+    .select(`${ROW_COLUMNS}, body`)
+    .eq("board_id", "discussion")
+    .order("net_count", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+
+  return (data ?? []).map((row) => {
+    const { body, ...rest } = row as PostRow & { body: string };
+    return { ...rest, excerpt: firstParagraph(body) };
+  });
+}
+
+/**
  * 목록 한 줄에 쓸 작성자 이름입니다.
  *
  * 익명 글이면 그냥 '익명' 입니다. 원본 시안은 '익명의 윙어' 처럼 포지션을 붙였지만,

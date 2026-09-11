@@ -26,13 +26,21 @@ type Props = {
   isMine: boolean;
   mine: ReactionKind | null;
   counts: { like: number; up: number; down: number };
+  /** 로그인하고 돌아올 주소. 없으면 그 글로 돌아갑니다. */
+  nextPath?: string;
 };
 
 /** 눌렀을 때 어떻게 바뀌는지. 같은 것을 또 누르면 취소입니다. */
 const nextOf = (mine: ReactionKind | null, clicked: ReactionKind) =>
   mine === clicked ? null : clicked;
 
-function useReaction({ postId, userUid, mine: initialMine, counts: initialCounts }: Props) {
+function useReaction({
+  postId,
+  userUid,
+  mine: initialMine,
+  counts: initialCounts,
+  nextPath,
+}: Props) {
   const router = useRouter();
   const [mine, setMine] = useState(initialMine);
   const [counts, setCounts] = useState(initialCounts);
@@ -43,8 +51,7 @@ function useReaction({ postId, userUid, mine: initialMine, counts: initialCounts
     if (busy) return;
 
     if (!userUid) {
-      // 로그인하고 나면 보던 글로 돌아옵니다.
-      router.push(`/login?next=/post/${postId}`);
+      router.push(`/login?next=${encodeURIComponent(nextPath ?? `/post/${postId}`)}`);
       return;
     }
 
@@ -66,8 +73,8 @@ function useReaction({ postId, userUid, mine: initialMine, counts: initialCounts
     const supabase = createClient();
     const { error: failed } = next
       ? await supabase
-          .from("post_reactions")
-          .upsert({ post_id: postId, user_uid: userUid, kind: next })
+        .from("post_reactions")
+        .upsert({ post_id: postId, user_uid: userUid, kind: next })
       : await supabase.from("post_reactions").delete().eq("post_id", postId);
 
     setBusy(false);
@@ -86,7 +93,35 @@ function useReaction({ postId, userUid, mine: initialMine, counts: initialCounts
   return { mine, counts, error, press };
 }
 
-/** 좋아요 하나만 있는 게시판. 원본의 `.pd-act` 안에 놓입니다. */
+export function RecRow(props: Props) {
+  const { mine, counts, error, press } = useReaction(props);
+
+  return (
+    <>
+      <div className="rec-row">
+        <button
+          type="button"
+          className="rec-btn up"
+          aria-pressed={mine === "up"}
+          onClick={() => press("up")}
+          disabled={props.isMine}
+        >
+          추천 <span className="n">{fmt(counts.up)}</span>
+        </button>
+        <button
+          type="button"
+          className="rec-btn down"
+          aria-pressed={mine === "down"}
+          onClick={() => press("down")}
+          disabled={props.isMine}
+        >
+          비추천 <span className="n">{fmt(counts.down)}</span>
+        </button>
+      </div>
+      {error && <p className="msg bad">{error}</p>}
+    </>
+  );
+}
 export function LikeButton(props: Props) {
   const { mine, counts, error, press } = useReaction(props);
 
@@ -122,16 +157,7 @@ export function UpDownBox(props: Props) {
         )}
       </div>
       <p style={{ fontSize: 12.5, color: "var(--dim)" }}>
-        추천이 쌓인 주제를 사무국이 검토해 투표로 개설합니다. 현재 순공감{" "}
-        <b
-          style={{
-            color: net < 0 ? "var(--rose)" : "var(--mint-d)",
-            fontFamily: "var(--util)",
-          }}
-        >
-          {net > 0 ? "+" : ""}
-          {fmt(net)}
-        </b>
+        추천이 쌓인 주제를 사무국이 검토해 투표로 개설합니다.
       </p>
 
       <div className="big">

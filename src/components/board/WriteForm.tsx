@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { BOARDS, boardOf } from "@/lib/boards";
+import { boardOf } from "@/lib/boards";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -86,7 +86,13 @@ export default function WriteForm({
   }
 
   return (
-    <form onSubmit={submit} noValidate>
+    <>
+      <div className="board-hd">
+        <div className="eyebrow">WRITE</div>
+        <h2>{boardId === "discussion" ? "토론주제 올리기" : "새 글 쓰기"}</h2>
+        <p>{board?.desc}</p>
+      </div>
+      <form onSubmit={submit} noValidate style={{ padding: "18px 16px 8px" }}>
       {error && <p className="form-err">{error}</p>}
 
       <div className="field">
@@ -156,6 +162,7 @@ export default function WriteForm({
           {busy ? "등록하는 중…" : "등록"}
         </button>
       </div>
-    </form>
+        </form>
+    </>
   );
 }

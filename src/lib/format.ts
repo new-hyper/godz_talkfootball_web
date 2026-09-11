@@ -43,3 +43,15 @@ const NEW_FOR_HOURS = 24;
 
 export const isNew = (iso: string) =>
   Date.now() - new Date(iso).getTime() < NEW_FOR_HOURS * 60 * 60 * 1000;
+
+/**
+ * 투표 마감일 `YYYY-MM-DD` 를 "3월 12일" 로 바꿉니다.
+ *
+ * `new Date("2026-03-12")` 는 UTC 자정으로 읽혀서, 한국보다 느린 지역에서는
+ * 하루 전으로 보일 수 있습니다. 날짜 글자만 잘라 씁니다.
+ */
+export function formatVoteEndsOn(ymd: string): string {
+  const [, month, day] = ymd.split("-").map(Number);
+  if (!month || !day) return ymd;
+  return `${month}월 ${day}일`;
+}

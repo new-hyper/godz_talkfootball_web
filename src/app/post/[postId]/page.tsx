@@ -2,12 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import DeletePostButton from "@/components/board/DeletePostButton";
 import { LikeButton, UpDownBox } from "@/components/board/PostReactions";
-import { getCurrentUser } from "@/lib/auth/session";
+import { ADMIN_DISPLAY_NAME, getCurrentUser } from "@/lib/auth/session";
 import { boardOf } from "@/lib/boards";
-import { ago } from "@/lib/format";
+import { ago, formatVoteEndsOn } from "@/lib/format";
 import CommentThread from "@/components/board/CommentThread";
 import { listComments } from "@/lib/comments";
 import { authorLabel, getMyReaction, getPost } from "@/lib/posts";
+import { getVote } from "@/lib/votes";
+import VoteBox from "@/components/board/VoteBox";
 
 /**
  * 글 상세입니다. 원본 시안의 `v-post` 뷰에 해당합니다.
@@ -46,12 +48,14 @@ export default async function PostPage(props: PageProps<"/post/[postId]">) {
   if (!post) notFound();
 
   const board = boardOf(post.board_id);
-  const author = authorLabel(post);
+  const isVote = post.board_id === "vote";
+  const author = isVote ? ADMIN_DISPLAY_NAME : authorLabel(post);
 
-  const [user, myReaction, comments] = await Promise.all([
+  const [user, myReaction, comments, vote] = await Promise.all([
     getCurrentUser(),
-    getMyReaction(post.id),
+    board?.reaction === "none" ? Promise.resolve(null) : getMyReaction(post.id),
     listComments(post.id),
+    isVote ? getVote(post.id) : Promise.resolve(null),
   ]);
 
   const reactionProps = {
@@ -103,7 +107,7 @@ export default async function PostPage(props: PageProps<"/post/[postId]">) {
                   <span className="nm">
                     {author}
                     {post.is_anonymous && <span className="anon">익명</span>}
-                    {post.is_mine && <span className="real">본인</span>}
+                    {!isVote && post.is_mine && <span className="real">본인</span>}
                   </span>
                   <span className="mt">
                     {ago(post.created_at)}
@@ -119,6 +123,17 @@ export default async function PostPage(props: PageProps<"/post/[postId]">) {
                   {text}
                 </p>
               ))}
+              {vote && (
+                <VoteBox
+                  postId={vote.id}
+                  userUid={user?.uid ?? null}
+                  myChoice={vote.my_choice}
+                  yesCount={vote.yes_count}
+                  noCount={vote.no_count}
+                  closed={vote.is_closed}
+                  endsLabel={formatVoteEndsOn(vote.ends_on)}
+                />
+              )}
               {board?.reaction === "updown" && <UpDownBox {...reactionProps} />}
             </div>
 

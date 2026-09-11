@@ -1,15 +1,87 @@
 import Link from "next/link";
+import DiscussionCard from "@/components/board/DiscussionCard";
+import VoteCard from "@/components/board/VoteCard";
+import HomeHero from "@/components/home/HomeHero";
+import { ADMIN_DISPLAY_NAME, getCurrentUser } from "@/lib/auth/session";
+import { boardOf } from "@/lib/boards";
+import { ago, formatVoteEndsOn } from "@/lib/format";
+import {
+  authorLabel,
+  firstParagraph,
+  getMyReactions,
+  listHomeTopics,
+  listRecentPosts,
+} from "@/lib/posts";
+import { getFeaturedVote, listOpenVotes } from "@/lib/votes";
 
 /**
  * 홈입니다.
  *
- * 히어로(진행 중인 투표), 공지 티커, 투표·토론주제 요약, 주간 인기글, 라이브 토론방은
- * 전부 Supabase에서 읽어와야 하는 자리라 아직 비어 있습니다. 다음 단계에서 채웁니다.
- * 지금은 원본 시안과 같은 뼈대와, 데이터가 필요 없는 '협회 현황' 카드만 들어 있습니다.
+ * 맨 위 남색 칸은 원본 시안의 `.hero` 입니다.
+ * 진행 중 안건 중 참여가 가장 많은 것 하나와, 방금 올라온 글입니다.
  */
-export default function HomePage() {
+export default async function HomePage() {
+  const [user, featured, votes, topics, recent] = await Promise.all([
+    getCurrentUser(),
+    getFeaturedVote(),
+    listOpenVotes(),
+    listHomeTopics(3),
+    listRecentPosts(5),
+  ]);
+  const myRecs = await getMyReactions(topics.map((t) => t.id));
+  const excerpt = featured ? firstParagraph(featured.body).replace(/\*\*/g, "") : "";
+
   return (
     <section className="view on">
+      <HomeHero
+        vote={featured}
+        excerpt={excerpt}
+        endsLabel={featured ? formatVoteEndsOn(featured.ends_on) : ""}
+      >
+        {recent.length === 0 ? (
+          <p className="sub" style={{ marginTop: 14 }}>
+            아직 올라온 글이 없습니다.
+          </p>
+        ) : (
+          <ul style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 13 }}>
+            {recent.map((post) => (
+              <li key={post.id}>
+                <Link href={`/post/${post.id}`} style={{ textAlign: "left", width: "100%", display: "block" }}>
+                  <div
+                    style={{
+                      fontSize: 10.5,
+                      fontFamily: "var(--util)",
+                      fontWeight: 600,
+                      color: "var(--mint)",
+                      letterSpacing: ".08em",
+                    }}
+                  >
+                    {boardOf(post.board_id)?.en ?? post.board_id}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 13.5,
+                      fontWeight: 600,
+                      lineHeight: 1.45,
+                      marginTop: 3,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      color: "#fff",
+                    }}
+                  >
+                    {post.title}
+                  </div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,.42)", marginTop: 2 }}>
+                    {post.board_id === "vote" ? ADMIN_DISPLAY_NAME : authorLabel(post)} · {ago(post.created_at)}
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </HomeHero>
+
       <div className="cols">
         <div>
           <div className="card">
@@ -20,10 +92,29 @@ export default function HomePage() {
                 전체보기
               </Link>
             </div>
-            <div className="empty">
-              <strong>아직 표시할 안건이 없습니다</strong>
-              <p>협회 사무국이 안건을 개설하면 여기에 표시됩니다.</p>
+            <div className="pnote">
+              투표 개설은 <b>협회 사무국만</b> 합니다. 회원은{" "}
+              <Link className="lk" href="/board/discussion">
+                토론주제
+              </Link>
+              에 주제를 올리고, 추천이 쌓인 주제를 사무국이 안건으로 올립니다.
             </div>
+            {votes.length === 0 ? (
+              <div className="empty">
+                <strong>아직 표시할 안건이 없습니다</strong>
+                <p>협회 사무국이 안건을 개설하면 여기에 표시됩니다.</p>
+              </div>
+            ) : (
+              votes.map((vote) => (
+                <VoteCard
+                  key={vote.id}
+                  vote={vote}
+                  endsLabel={formatVoteEndsOn(vote.ends_on)}
+                  userUid={user?.uid ?? null}
+                  nextPath="/"
+                />
+              ))
+            )}
           </div>
 
           <div className="card">
@@ -34,9 +125,31 @@ export default function HomePage() {
                 전체보기
               </Link>
             </div>
-            <div className="empty">
-              <strong>아직 올라온 주제가 없습니다</strong>
-              <p>다뤘으면 하는 주제를 누구나 올릴 수 있습니다.</p>
+            <div className="pnote amber">
+              주제는 <b>회원 누구나</b> 올릴 수 있습니다. 추천·비추천으로 공감을 표시해 주세요.
+            </div>
+            {topics.length === 0 ? (
+              <div className="empty">
+                <strong>아직 올라온 주제가 없습니다</strong>
+                <p>다뤘으면 하는 주제를 누구나 올릴 수 있습니다.</p>
+              </div>
+            ) : (
+              topics.map((topic) => (
+                <DiscussionCard
+                  key={topic.id}
+                  topic={topic}
+                  author={authorLabel(topic)}
+                  when={ago(topic.created_at)}
+                  userUid={user?.uid ?? null}
+                  mine={myRecs[topic.id] ?? null}
+                  nextPath="/"
+                />
+              ))
+            )}
+            <div style={{ padding: "14px 16px" }}>
+              <Link className="btn ghost" href="/write?board=discussion" style={{ width: "100%", height: 42 }}>
+                토론주제 올리기
+              </Link>
             </div>
           </div>
         </div>

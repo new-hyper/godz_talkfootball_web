@@ -29,13 +29,8 @@ const chipClass = (boardId: string) =>
 export default function PostRow({ post }: { post: Post }) {
   const board = boardOf(post.board_id);
 
-  // 토론주제는 추천에서 비추천을 뺀 값이 곧 그 주제가 받은 지지입니다.
   const score =
-    board?.reaction === "updown"
-      ? `순공감 ${fmt(post.net_count)}`
-      : board?.reaction === "like"
-        ? `추천 ${fmt(post.like_count)}`
-        : null;
+    board?.reaction === "like" ? `추천 ${fmt(post.like_count)}` : null;
 
   return (
     <li>
