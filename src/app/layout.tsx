@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import "./globals.css";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
@@ -22,7 +23,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="ko" suppressHydrationWarning>
       <body>
-        <SiteHeader user={user} />
+        <Suspense>
+          <SiteHeader user={user} />
+        </Suspense>
         {/* 원본 시안의 `<main class="page">` 입니다. 최대 너비와 좌우 여백을 여기서 잡습니다. */}
         <main className="page">{children}</main>
         <SiteFooter />

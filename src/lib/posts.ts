@@ -113,6 +113,87 @@ export async function listPosts(options: {
   return { rows: (data ?? []) as PostRow[], total: count ?? 0, page };
 }
 
+/** 검색어 최대 길이. 제목 제한과 같다. 본문은 더 길어도 앞 80자면 찾는다. */
+const SEARCH_Q_MAX = 80;
+
+/**
+ * 검색 결과를 한 쪽분 읽습니다. 목록과 같은 `PostRow` 입니다.
+ *
+ * 새 표를 만들지 않습니다. 이미 있는 `posts_view` 와 `comments_view` 를
+ * 조건만 바꿔 읽습니다. 게시판 목록이 한 게시판을 걸러 읽는 것과 같고,
+ * 여기서는 검색어가 그 거름망입니다.
+ *
+ * 댓글이 맞아도 **그 댓글이 달린 글**이 한 줄로 나옵니다.
+ * 댓글을 따로 나열하면 같은 글이 여러 번 보이고, 목록 한 줄 컴포넌트를 못 씁니다.
+ *
+ * 왕복은 두 번입니다. 댓글에서 글 번호를 모은 뒤, 제목·본문·작성자가 맞거나
+ * 그 번호에 들어 있는 글을 한 쪽분 읽습니다. 댓글을 안 보면 글만 찾아서
+ * 헤더에 적어 둔 '글·댓글·작성자'와 어긋납니다.
+ *
+ * 닉네임은 **화면에 보이는 이름**만 봅니다. 익명 글의 실제 닉네임은
+ * 사무국 뷰에는 들어오지만, 목록에는 '익명'만 나와서 검색에 넣으면
+ * 본문과 상관없는 글이 닉네임 조각에 걸리는 일이 생깁니다.
+ *
+ * `%` `_` 는 글자 그 자체로 보고, 검색어의 쉼표는 따옴표로 감싸
+ * PostgREST 의 `or` 가 칸을 잘못 쪼개지 않게 합니다.
+ */
+export async function searchPosts(options: {
+  q: string;
+  page: number;
+}): Promise<{ rows: PostRow[]; total: number; page: number; q: string }> {
+  const q = options.q.trim().slice(0, SEARCH_Q_MAX);
+  const needle = q.replace(/"/g, "");
+  if (!needle) return { rows: [], total: 0, page: 1, q: "" };
+
+  const supabase = await createClient();
+  const postOr = visibleTextOr(["title", "body"], needle);
+  const commentOr = visibleTextOr(["body"], needle);
+
+  const commentsHit = await supabase.from("comments_view").select("post_id").or(commentOr);
+  if (commentsHit.error) throw commentsHit.error;
+
+  const commentPostIds = [
+    ...new Set((commentsHit.data ?? []).map((row) => row.post_id as number)),
+  ];
+  const filter =
+    commentPostIds.length > 0 ? `${postOr},id.in.(${commentPostIds.join(",")})` : postOr;
+
+  const read = async (page: number) => {
+    const from = (page - 1) * POSTS_PER_PAGE;
+    return supabase
+      .from("posts_view")
+      .select(ROW_COLUMNS, { count: "exact" })
+      .or(filter)
+      .order("created_at", { ascending: false })
+      .range(from, from + POSTS_PER_PAGE - 1);
+  };
+
+  let page = options.page;
+  let { data, count, error } = await read(page);
+
+  if (error?.code === "PGRST103" && page !== 1) {
+    page = 1;
+    ({ data, count, error } = await read(page));
+  }
+  if (error) throw error;
+
+  return { rows: (data ?? []) as PostRow[], total: count ?? 0, page, q };
+}
+
+/**
+ * PostgREST `or` 에 넣을 조건입니다. 값은 큰따옴표로 감쌉니다.
+ * 닉네임은 익명이 아닐 때만 붙입니다. 화면에 안 보이는 이름은 검색에도 안 씁니다.
+ */
+function visibleTextOr(columns: string[], q: string) {
+  const pattern =
+    "%" +
+    q.replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_").replace(/"/g, "") +
+    "%";
+  const text = columns.map((col) => `${col}.ilike."${pattern}"`);
+  const nick = `and(is_anonymous.eq.false,author_nickname.ilike."${pattern}")`;
+  return [...text, nick].join(",");
+}
+
 /** 상세 화면에서 쓰는 것. 목록에 없던 본문과 수정 시각이 더 있습니다. */
 export type PostDetail = PostRow & {
   body: string;
