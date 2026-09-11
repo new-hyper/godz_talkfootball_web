@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import BrandCrest from "./BrandCrest";
 import LogoutButton from "./auth/LogoutButton";
@@ -24,8 +24,15 @@ import type { CurrentUser } from "@/lib/auth/session";
 export default function SiteHeader({ user }: { user: CurrentUser | null }) {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const urlQ = pathname === "/search" ? (searchParams.get("q") ?? "").trim() : "";
+  const [searchDraft, setSearchDraft] = useState(urlQ);
+
+  useEffect(() => {
+    setSearchDraft(urlQ);
+  }, [urlQ]);
 
   // 드로어가 열려 있는 동안에는 뒤쪽 본문이 같이 스크롤되지 않도록 막습니다.
   useEffect(() => {
@@ -56,11 +63,9 @@ export default function SiteHeader({ user }: { user: CurrentUser | null }) {
 
   const onSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const q = new FormData(e.currentTarget).get("q");
-    if (typeof q === "string" && q.trim()) {
-      setSearchOpen(false);
-      router.push(`/search?q=${encodeURIComponent(q.trim())}`);
-    }
+    const q = searchDraft.trim();
+    setSearchOpen(false);
+    router.push(q ? `/search?q=${encodeURIComponent(q)}` : "/search");
   };
 
   return (
@@ -119,7 +124,15 @@ export default function SiteHeader({ user }: { user: CurrentUser | null }) {
               <label className="sr" htmlFor="q">
                 게시글 검색
               </label>
-              <input id="q" name="q" type="search" placeholder="글·댓글·작성자 검색" autoComplete="off" />
+              <input
+                id="q"
+                name="q"
+                type="search"
+                placeholder="글·댓글·작성자 검색"
+                autoComplete="off"
+                value={searchDraft}
+                onChange={(e) => setSearchDraft(e.target.value)}
+              />
               <button className="go" type="submit" aria-label="검색">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
                   <circle cx="11" cy="11" r="7" />
@@ -162,7 +175,14 @@ export default function SiteHeader({ user }: { user: CurrentUser | null }) {
           <label className="sr" htmlFor="mq">
             게시글 검색
           </label>
-          <input id="mq" name="q" type="search" placeholder="글·댓글·작성자 검색" />
+          <input
+            id="mq"
+            name="q"
+            type="search"
+            placeholder="글·댓글·작성자 검색"
+            value={searchDraft}
+            onChange={(e) => setSearchDraft(e.target.value)}
+          />
         </form>
 
         <nav className="gnb" aria-label="주 메뉴">

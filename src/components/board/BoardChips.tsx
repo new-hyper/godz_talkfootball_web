@@ -22,7 +22,12 @@ import { BOARDS } from "@/lib/boards";
  * 이때부터는 서버가 보내 준 진짜 값이 맞으므로 짐작한 값을 붙들고 있을 이유가 없습니다.
  * 뒤로 가기로 돌아왔을 때 엉뚱한 칩이 켜져 있는 것도 이 정리가 막아 줍니다.
  */
-export default function BoardChips({ currentBoardId }: { currentBoardId: string }) {
+export default function BoardChips({
+  currentBoardId,
+}: {
+  /** 검색 화면처럼 게시판이 아니면 null. 칩을 누르면 그 게시판으로 갑니다. */
+  currentBoardId: string | null;
+}) {
   const pathname = usePathname();
   const [pending, setPending] = useState<string | null>(null);
 
