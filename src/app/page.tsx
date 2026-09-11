@@ -1,27 +1,87 @@
 import Link from "next/link";
 import DiscussionCard from "@/components/board/DiscussionCard";
 import VoteCard from "@/components/board/VoteCard";
-import { getCurrentUser } from "@/lib/auth/session";
+import HomeHero from "@/components/home/HomeHero";
+import { ADMIN_DISPLAY_NAME, getCurrentUser } from "@/lib/auth/session";
+import { boardOf } from "@/lib/boards";
 import { ago, formatVoteEndsOn } from "@/lib/format";
-import { authorLabel, getMyReactions, listHomeTopics } from "@/lib/posts";
-import { listOpenVotes } from "@/lib/votes";
+import {
+  authorLabel,
+  firstParagraph,
+  getMyReactions,
+  listHomeTopics,
+  listRecentPosts,
+} from "@/lib/posts";
+import { getFeaturedVote, listOpenVotes } from "@/lib/votes";
 
 /**
  * 홈입니다.
  *
- * 투표·토론주제 카드는 원본 시안의 `paintHomeVotes` / `paintHomeTopics` 입니다.
- * 히어로(큰 찬반 배너)와 공지 티커는 아직 비어 있습니다.
+ * 맨 위 남색 칸은 원본 시안의 `.hero` 입니다.
+ * 진행 중 안건 중 참여가 가장 많은 것 하나와, 방금 올라온 글입니다.
  */
 export default async function HomePage() {
-  const [user, votes, topics] = await Promise.all([
+  const [user, featured, votes, topics, recent] = await Promise.all([
     getCurrentUser(),
+    getFeaturedVote(),
     listOpenVotes(),
     listHomeTopics(3),
+    listRecentPosts(5),
   ]);
   const myRecs = await getMyReactions(topics.map((t) => t.id));
+  const excerpt = featured ? firstParagraph(featured.body).replace(/\*\*/g, "") : "";
 
   return (
     <section className="view on">
+      <HomeHero
+        vote={featured}
+        excerpt={excerpt}
+        endsLabel={featured ? formatVoteEndsOn(featured.ends_on) : ""}
+      >
+        {recent.length === 0 ? (
+          <p className="sub" style={{ marginTop: 14 }}>
+            아직 올라온 글이 없습니다.
+          </p>
+        ) : (
+          <ul style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 13 }}>
+            {recent.map((post) => (
+              <li key={post.id}>
+                <Link href={`/post/${post.id}`} style={{ textAlign: "left", width: "100%", display: "block" }}>
+                  <div
+                    style={{
+                      fontSize: 10.5,
+                      fontFamily: "var(--util)",
+                      fontWeight: 600,
+                      color: "var(--mint)",
+                      letterSpacing: ".08em",
+                    }}
+                  >
+                    {boardOf(post.board_id)?.en ?? post.board_id}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 13.5,
+                      fontWeight: 600,
+                      lineHeight: 1.45,
+                      marginTop: 3,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                      color: "#fff",
+                    }}
+                  >
+                    {post.title}
+                  </div>
+                  <div style={{ fontSize: 11, color: "rgba(255,255,255,.42)", marginTop: 2 }}>
+                    {post.board_id === "vote" ? ADMIN_DISPLAY_NAME : authorLabel(post)} · {ago(post.created_at)}
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </HomeHero>
+
       <div className="cols">
         <div>
           <div className="card">

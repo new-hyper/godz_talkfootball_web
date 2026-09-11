@@ -199,6 +199,21 @@ export function firstParagraph(body: string): string {
 }
 
 /**
+ * 홈 LIVE FEED. 원본은 방금 올라온 글 5개입니다.
+ */
+export async function listRecentPosts(limit = 5): Promise<PostRow[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("posts_view")
+    .select(ROW_COLUMNS)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+  return (data ?? []) as PostRow[];
+}
+
+/**
  * 홈에 올릴 토론주제입니다. 순공감이 높은 것 최대 3개. 원본 `paintHomeTopics` 와 같습니다.
  */
 export async function listHomeTopics(limit = 3): Promise<TopicPreview[]> {

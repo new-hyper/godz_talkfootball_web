@@ -70,4 +70,21 @@ export async function listOpenVotes(): Promise<VoteRow[]> {
   return (data ?? []) as VoteRow[];
 }
 
-export type { VoteDetail, VoteRow };
+/**
+ * 홈 히어로에 올릴 진행 중 안건 하나.
+ * 참여(ballot_count)가 가장 많은 것, 같으면 더 최근에 개설된 것.
+ */
+export async function getFeaturedVote(): Promise<VoteDetail | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("vote_posts_view")
+    .select(`${ROW_COLUMNS}, body`)
+    .eq("is_closed", false)
+    .order("ballot_count", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+  return (data as VoteDetail | null) ?? null;
+}
