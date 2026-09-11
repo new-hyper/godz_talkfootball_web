@@ -1,13 +1,25 @@
 import Link from "next/link";
+import DiscussionCard from "@/components/board/DiscussionCard";
+import VoteCard from "@/components/board/VoteCard";
+import { getCurrentUser } from "@/lib/auth/session";
+import { ago, formatVoteEndsOn } from "@/lib/format";
+import { authorLabel, getMyReactions, listHomeTopics } from "@/lib/posts";
+import { listOpenVotes } from "@/lib/votes";
 
 /**
  * 홈입니다.
  *
- * 히어로(진행 중인 투표), 공지 티커, 투표·토론주제 요약, 주간 인기글, 라이브 토론방은
- * 전부 Supabase에서 읽어와야 하는 자리라 아직 비어 있습니다. 다음 단계에서 채웁니다.
- * 지금은 원본 시안과 같은 뼈대와, 데이터가 필요 없는 '협회 현황' 카드만 들어 있습니다.
+ * 투표·토론주제 카드는 원본 시안의 `paintHomeVotes` / `paintHomeTopics` 입니다.
+ * 히어로(큰 찬반 배너)와 공지 티커는 아직 비어 있습니다.
  */
-export default function HomePage() {
+export default async function HomePage() {
+  const [user, votes, topics] = await Promise.all([
+    getCurrentUser(),
+    listOpenVotes(),
+    listHomeTopics(3),
+  ]);
+  const myRecs = await getMyReactions(topics.map((t) => t.id));
+
   return (
     <section className="view on">
       <div className="cols">
@@ -20,10 +32,29 @@ export default function HomePage() {
                 전체보기
               </Link>
             </div>
-            <div className="empty">
-              <strong>아직 표시할 안건이 없습니다</strong>
-              <p>협회 사무국이 안건을 개설하면 여기에 표시됩니다.</p>
+            <div className="pnote">
+              투표 개설은 <b>협회 사무국만</b> 합니다. 회원은{" "}
+              <Link className="lk" href="/board/discussion">
+                토론주제
+              </Link>
+              에 주제를 올리고, 추천이 쌓인 주제를 사무국이 안건으로 올립니다.
             </div>
+            {votes.length === 0 ? (
+              <div className="empty">
+                <strong>아직 표시할 안건이 없습니다</strong>
+                <p>협회 사무국이 안건을 개설하면 여기에 표시됩니다.</p>
+              </div>
+            ) : (
+              votes.map((vote) => (
+                <VoteCard
+                  key={vote.id}
+                  vote={vote}
+                  endsLabel={formatVoteEndsOn(vote.ends_on)}
+                  userUid={user?.uid ?? null}
+                  nextPath="/"
+                />
+              ))
+            )}
           </div>
 
           <div className="card">
@@ -34,9 +65,31 @@ export default function HomePage() {
                 전체보기
               </Link>
             </div>
-            <div className="empty">
-              <strong>아직 올라온 주제가 없습니다</strong>
-              <p>다뤘으면 하는 주제를 누구나 올릴 수 있습니다.</p>
+            <div className="pnote amber">
+              주제는 <b>회원 누구나</b> 올릴 수 있습니다. 추천·비추천으로 공감을 표시해 주세요.
+            </div>
+            {topics.length === 0 ? (
+              <div className="empty">
+                <strong>아직 올라온 주제가 없습니다</strong>
+                <p>다뤘으면 하는 주제를 누구나 올릴 수 있습니다.</p>
+              </div>
+            ) : (
+              topics.map((topic) => (
+                <DiscussionCard
+                  key={topic.id}
+                  topic={topic}
+                  author={authorLabel(topic)}
+                  when={ago(topic.created_at)}
+                  userUid={user?.uid ?? null}
+                  mine={myRecs[topic.id] ?? null}
+                  nextPath="/"
+                />
+              ))
+            )}
+            <div style={{ padding: "14px 16px" }}>
+              <Link className="btn ghost" href="/write?board=discussion" style={{ width: "100%", height: 42 }}>
+                토론주제 올리기
+              </Link>
             </div>
           </div>
         </div>

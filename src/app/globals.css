@@ -796,7 +796,7 @@ p {
   overflow: hidden
 }
 
-.row-ttl .cmt {
+:is(.row-ttl, .deb-t) .cmt {
   font-family: var(--util);
   font-size: 12px;
   font-weight: 700;

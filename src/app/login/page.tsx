@@ -21,7 +21,7 @@ export default async function LoginPage(props: PageProps<"/login">) {
           <div className="eyebrow">LOGIN</div>
           <h2>로그인</h2>
           <p>
-            {next === "/write"
+            {next === "/write" || next.startsWith("/write/")
               ? "글을 쓰려면 로그인이 필요합니다."
               : "이메일과 비밀번호로 로그인합니다."}
           </p>
