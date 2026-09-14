@@ -1,12 +1,15 @@
 import Link from "next/link";
 import LogoutButton from "@/components/auth/LogoutButton";
-import { getCurrentUser } from "@/lib/auth/session";
+import NicknameForm from "@/components/auth/NicknameForm";
+import { nicknameChangeOpensAt } from "@/lib/auth/nickname";
+import { getCurrentUser, getMyAccount } from "@/lib/auth/session";
+import { formatKoreanDateTime } from "@/lib/format";
 
 /**
  * 내 활동입니다. 원본 시안의 `v-my` 뷰에 해당합니다.
  *
  * 글·댓글·투표 기록은 게시판 단계에서 채웁니다.
- * 지금은 로그인 여부에 따라 계정 정보와 로그아웃만 보여줍니다.
+ * 계정 칸에서는 닉네임을 바꿀 수 있습니다. 30일 제한은 DB 트리거가 지킵니다.
  */
 export const metadata = {
   title: "내 활동 — 고다지 커뮤니티",
@@ -14,6 +17,8 @@ export const metadata = {
 
 export default async function MyPage() {
   const user = await getCurrentUser();
+  const account = user ? await getMyAccount() : null;
+  const opensAt = nicknameChangeOpensAt(account?.nickname_changed_at ?? null);
 
   return (
     <section className="view on">
@@ -36,6 +41,22 @@ export default async function MyPage() {
                     </span>
                   </span>
                 </div>
+
+                {opensAt ? (
+                  <div className="notice-box" style={{ marginBottom: 16 }}>
+                    닉네임은 30일에 한 번만 바꿀 수 있습니다. 다음 변경은{" "}
+                    <b>{formatKoreanDateTime(opensAt.toISOString())}</b>부터 가능합니다.
+                  </div>
+                ) : (
+                  <div style={{ marginBottom: 16 }}>
+                    <NicknameForm
+                      uid={user.uid}
+                      currentNickname={user.nickname}
+                      isAdmin={user.isAdmin}
+                    />
+                  </div>
+                )}
+
                 <div className="notice-box" style={{ marginBottom: 16 }}>
                   글·댓글·투표 기록은 게시판을 만들면서 채웁니다.
                 </div>

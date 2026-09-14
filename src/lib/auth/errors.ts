@@ -41,6 +41,7 @@ const BY_MESSAGE: [RegExp, string][] = [
   [/auth session missing|not authenticated/i, "링크가 만료되었습니다. 이메일을 다시 받아 주세요."],
   [/for security purposes|rate limit|too many requests/i, "요청이 너무 잦습니다. 잠시 후 다시 시도해 주세요."],
   [/password.*(should be|at least)/i, "비밀번호는 8자 이상이어야 합니다."],
+  [/닉네임은 30일에 한 번만/i, "닉네임은 30일에 한 번만 바꿀 수 있습니다."],
   // 가입 트리거가 실패했다는 뜻인데 이유가 안 실려 온다.
   // 부르는 쪽에서 이유를 가려내지 못했을 때만 여기까지 온다.
   [/database error saving new user/i, "닉네임을 저장하지 못했습니다. 다른 닉네임으로 시도해 주세요."],

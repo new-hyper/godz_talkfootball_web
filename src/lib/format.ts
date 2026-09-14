@@ -50,6 +50,21 @@ export const isNew = (iso: string) =>
  * `new Date("2026-03-12")` 는 UTC 자정으로 읽혀서, 한국보다 느린 지역에서는
  * 하루 전으로 보일 수 있습니다. 날짜 글자만 잘라 씁니다.
  */
+/**
+ * 저장된 시각을 "2026년 10월 14일 오후 2:37" 로 바꿉니다.
+ * 닉네임 다음 변경 가능 시점처럼, 날짜만으로는 이른 오후에 막힐 수 있어 시각까지 적습니다.
+ */
+export function formatKoreanDateTime(iso: string): string {
+  return new Date(iso).toLocaleString("ko-KR", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
 export function formatVoteEndsOn(ymd: string): string {
   const [, month, day] = ymd.split("-").map(Number);
   if (!month || !day) return ymd;

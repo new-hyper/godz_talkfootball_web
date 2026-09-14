@@ -63,3 +63,24 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     displayName: role === "admin" ? ADMIN_DISPLAY_NAME : profile.nickname,
   };
 });
+
+/**
+ * 본인 행 전체. `nickname_changed_at` 처럼 남에게 열어 두지 않은 칸이 여기 있다.
+ * 칸 권한이 uid·nickname·role 만 허용하므로, 나머지는 security definer 인
+ * `my_account()` 로만 읽는다. Flutter 로 치면 공개 프로필과 내 설정 화면을
+ * 다른 API 로 나눈 것과 같다.
+ */
+export type MyAccount = {
+  uid: string;
+  nickname: string;
+  role: string;
+  nickname_changed_at: string | null;
+};
+
+export const getMyAccount = cache(async (): Promise<MyAccount | null> => {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("my_account");
+  if (error || data == null) return null;
+  const row = (Array.isArray(data) ? data[0] : data) as MyAccount | undefined;
+  return row ?? null;
+});
