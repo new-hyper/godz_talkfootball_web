@@ -110,6 +110,12 @@ export default function LoginForm({ next = "/" }: { next?: string }) {
         {busy ? "로그인하는 중…" : "로그인"}
       </button>
 
+      <p style={{ marginTop: 12, textAlign: "center", fontSize: 13 }}>
+        <Link href="/login/forgot" style={{ color: "var(--mint-d)", fontWeight: 700 }}>
+          비밀번호를 잊으셨나요?
+        </Link>
+      </p>
+
       <p style={{ marginTop: 16, textAlign: "center", fontSize: 13, color: "var(--dim)" }}>
         아직 회원이 아니신가요?{" "}
         <Link href="/signup" style={{ color: "var(--mint-d)", fontWeight: 700 }}>
